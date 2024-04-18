@@ -6,40 +6,33 @@
 
 // Amoes Noland 5027231028
 
-void run(char process[]){
-   printf("\tPID: %d\n\tPPID: %d\nProcess: %s\n", getpid(), getppid(), process);
-}
-
 void open(int argc, char *argv[])
 {
-    int count=0, checked=0;
     for (int i=2; i<argc; i+=2){
         if (!(*argv[i+1]-'0' >= 0 && *argv[i+1]-'0' <= 9)){
             printf("Error: Invalid argument(s)");
             exit(1);
-        } count+=(*argv[i+1]-'0');
-    } pid_t ids[count];
-
+        }
+    }
     // printf("%d\n", count);
 
-    char *process[count];
     for (int i=2; i<argc; i+=2){
-        for (int j=checked; j<(*argv[i+1]-'0'+checked); j++){
-            process[j] = argv[i];
-        } checked+=(*argv[i+1]-'0');
+        for (int j=0; j<*argv[i+1]-'0'; j++){
+            pid_t pid = fork();
+            if (pid < 0) {
+                printf("Error: Fork failed\n");
+                exit(1);
+            }
+            if (0 == pid){
+                // printf("debug PID: %d for process %s\n", getpid(), argv[i]); exit(0);
+                execlp(argv[i],argv[i],NULL);
+                // if(execlp(argv[i],argv[i],NULL) == -1){
+                //     printf("Error: Exec failed");
+                //     exit(1);
+                // }
+            }
+        }
     }
-
-    for (int i=0; i<count; i++){
-        ids[i] = fork();
-        if (ids[i] < 0) {
-            printf("Error: Fork Failed\n");
-            exit(1);
-        }
-        if (0 == ids[i]){
-            run(process[i]);
-        }
-        // printf("%s\n", process[i]);
-    } 
 }
 
 
@@ -48,14 +41,14 @@ int main(int argc, char *argv[])
     switch (argv[1][1])
     {
     case 'o':
-        printf("regular command\n");
+        printf("-o: using regular syntax...\n");
         open(argc, argv);
         break;
     case 'f':
-        printf("conf command\n");     
+        printf("-f: using config file...\n");     
         break;
     case 'k':
-        printf("kill command\n");     
+        printf("-k: killing processes...\n");     
         break;
     default:
         printf("Exited: Invalid option");
