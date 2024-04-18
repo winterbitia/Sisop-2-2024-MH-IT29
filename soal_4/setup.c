@@ -22,12 +22,12 @@ void add_global(pid_t pid){
     if (pidcount < PID_MAX){
         running[pidcount] = pid;
         pidcount++;
-        printf("Debug: pidcount=%d\n", pidcount);
+        // printf("Debug: pidcount=%d\n", pidcount);
     }
 }
 
 void read_temp(){
-    printf("Debug: read temp\n");     
+    // printf("Debug: read temp\n");     
     
     // Get file
     FILE *input_file = fopen(TMP_FILE, "r");
@@ -49,7 +49,7 @@ void read_temp(){
 }
 
 void write_temp(){
-    printf("Debug: write temp\n");     
+    // printf("Debug: write temp\n");     
     
     // Get file
     FILE *input_file = fopen(TMP_FILE, "w");
@@ -73,7 +73,7 @@ void write_temp(){
 void kill_temp(){
     // Use loaded global variables to loop killing PIDs
     for (int i = 0; i < pidcount; i++) {
-        printf("Debug: attempt kill PID  %d\n", (int)running[i]);
+        // printf("Debug: attempt kill PID  %d\n", (int)running[i]);
         if (kill(running[i], SIGTERM) == -1) {
             perror("Error");
         }
@@ -132,7 +132,7 @@ void open(int argc, char *argv[])
             }
             else {
                 // Parent : add PIDs to global array
-                printf("Debug process %s\n", argv[i]);
+                // printf("Debug process %s\n", argv[i]);
                 add_global(pid);
             }
         }
@@ -163,7 +163,7 @@ void open_file(int argc, char *argv[]){
                 }
                 else {
                     // Parent : add PIDs to global array
-                    printf("Debug process %s\n", argv[i]);
+                    // printf("Debug process %s\n", argv[i]);
                     add_global(pid);
                 }
             }
@@ -179,24 +179,24 @@ int main(int argc, char *argv[])
     switch (argv[1][1])
     {
         case 'o':
-            printf("Debug: -o syntax used\n");
+            // printf("Debug: -o syntax used\n");
             open(argc, argv);
             write_temp();
             break;
         case 'f':
-            printf("Debug: -f syntax used\n");     
+            // printf("Debug: -f syntax used\n");     
             open_file(argc, argv);
             write_temp();
             break;
         case 'k':
-            printf("Debug: -k syntax used\n");  
+            // printf("Debug: -k syntax used\n");  
             // Branches based on the existence of conf   
             if (3 == argc){
-                printf("Debug: conf used\n");     
+                // printf("Debug: conf used\n");     
                 kill_file(argc, argv);
             }
             else{
-                printf("Debug: no conf used\n");     
+                // printf("Debug: no conf used\n");     
                 read_temp();
                 kill_temp();
             }
