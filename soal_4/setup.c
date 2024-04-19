@@ -13,7 +13,7 @@ Amoes Noland 5027231028
 // Global variable preparations
 #define PID_MAX  20 //for controlling loop count
 #define ARG_SIZE 50 //for controlling str memory allocations
-#define TMP_FILE "temp.txt"
+#define TMP_FILE ".temp.txt"
 pid_t running[PID_MAX];
 int pidcount = 0;
 
