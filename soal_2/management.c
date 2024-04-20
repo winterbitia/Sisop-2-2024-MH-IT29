@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <syslog.h>
 #include <libgen.h>
+#include <dirent.h>
 
 /* Soal_2 - VERSION 0.1
 Amoes Noland 5027231028
@@ -31,8 +32,9 @@ void get_library(){
         // Child : exec process
         chdir(dir_name);
         char *cmd = "/usr/bin/wget";
-        char *arg[] = {"wget", "--no-check-certificate", LIBRARY,
-                      "-O", "library.zip", NULL};
+        char *arg[] = {"wget", "--no-check-certificate", "--content-disposition",
+                      LIBRARY, "-P", dir_name, NULL};
+
         execvp(cmd,arg);
         exit(0);
     }
@@ -70,6 +72,21 @@ char rot19(char input){
    return (input - base + 7) % 26 + base;
 }
 
+void default_mode(){
+    chdir(dir_name);
+    char *dir_back = dir_name;
+
+    DIR *dir = opendir(dir_name);
+    struct dirent *ep;
+    if (!dir) return;
+
+    // while(ep = readdir(dir)){
+        
+    // }
+
+    return;
+}
+
 int main(int argc, char *argv[]){
     getcwd(dir_name, sizeof(dir_name));
     // printf("%s", dir_name);
@@ -92,6 +109,7 @@ int main(int argc, char *argv[]){
     close(STDERR_FILENO);
 
     while (1) {
+        chdir(dir_name);
         // Obtain library only once
         static int got = 0;
         if (!got){
