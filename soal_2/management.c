@@ -143,7 +143,7 @@ void backup_init(char *dir_bak){
     }
 }
 
-void backup_move(char *buffer_lib, char *buffer_bak){
+void backup_move(char *source, char *dest){
     pid_t pid = fork();
     if (pid < 0) {
         printf("Error: Fork failed\n");
@@ -152,7 +152,7 @@ void backup_move(char *buffer_lib, char *buffer_bak){
     if (0 == pid){
         // Child : make directory
         char *cmd = "/usr/bin/mv";
-        char *arg[] = {"mv", buffer_lib, buffer_bak, NULL};
+        char *arg[] = {"mv", source, dest, NULL};
         execvp(cmd, arg);
         exit(0);
     }
@@ -162,7 +162,7 @@ void backup_move(char *buffer_lib, char *buffer_bak){
         waitpid(pid, &status, 0);
     }
 }
-void backup_mode(){
+void backup_or_restore(int backup){
     char dir_lib[MAX_BUFFER]; 
     strcpy(dir_lib, dir_name);
     strcat(dir_lib, "/library/");
@@ -181,10 +181,11 @@ void backup_mode(){
 
     if (backup_check(dir_bak)) backup_init(dir_bak);
 
-    DIR *dir = opendir(dir_lib);
+    DIR *dir;
+    if (backup) dir = opendir(dir_lib);
+    else        dir = opendir(dir_bak);
     struct dirent *ep;
     if (!dir) return;
-
 
     while(ep = readdir(dir)){
         strcpy(buffer, ep->d_name);
@@ -201,17 +202,13 @@ void backup_mode(){
         // printf("%s\n", buffer_lib);
         // printf("%s\n", buffer_bak);
 
-        backup_move(buffer_lib, buffer_bak);
+        if (backup) backup_move(buffer_lib, buffer_bak);
+        else        backup_move(buffer_bak, buffer_lib);
         sleep(1);
     }
     closedir(dir);
     return;
 }
-
-void restore_mode(){
-    return;
-}
-
 
 int main(int argc, char *argv[]){
     getcwd(dir_name, sizeof(dir_name));
@@ -255,9 +252,9 @@ int main(int argc, char *argv[]){
             if (strcmp(argv[1], "-m") != 0)
                 break;
             if (strcmp(argv[2], "backup") == 0)
-                backup_mode();
+                backup_or_restore(1);
             if (strcmp(argv[2], "restore") == 0)
-                restore_mode();
+                backup_or_restore(0);
             break;
         default:
             break;
