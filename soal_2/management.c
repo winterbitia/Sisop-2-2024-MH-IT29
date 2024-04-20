@@ -13,7 +13,7 @@
 #include <libgen.h>
 #include <dirent.h>
 
-/* Soal_2 - VERSION 0.4
+/* Soal_2 - VERSION 0.5
 Amoes Noland 5027231028
 */
 
@@ -21,20 +21,21 @@ Amoes Noland 5027231028
 #define LIBRARY     "https://drive.google.com/uc?export=download&id=1rUIZmp10lXLtCIH3LAZJzRPeRks3Crup"
 #define MAX_BUFFER  1024
 char dir_name[MAX_BUFFER];
+static int got = 0;
 
 // Set mode signals
 volatile sig_atomic_t mode = 0;
-void signal_default(int sig){
+void signal_default(int sig) {
     mode = 0;
 }
-void signal_backup(int sig){
+void signal_backup(int sig) {
     mode = 1;
 }
-void signal_restore(int sig){
+void signal_restore(int sig) {
     mode = 2;
 }
-void signal_exit(int sig){
-    exit(0);
+void signal_exit(int sig) {
+    exit(EXIT_SUCCESS);
 }
 
 // Deletes all library starting files
@@ -183,6 +184,7 @@ void default_mode(){
         // sleep(1);
     }
     closedir(dir);
+    raise(SIGUSR1);
     return;
 }
 
@@ -283,6 +285,18 @@ void branch_mode(int backup){
     return;
 }
 
+void branch_default(){
+    // Obtain library only once
+    if (!got)
+    {
+        reset_default();
+        get_library();
+        ext_library();
+        default_mode();
+        got = 1;
+    }
+}
+
 int main(int argc, char *argv[]){
     // Save current directory to global var
     getcwd(dir_name, sizeof(dir_name));
@@ -292,25 +306,14 @@ int main(int argc, char *argv[]){
     signal(SIGUSR1, signal_backup);
     signal(SIGUSR2, signal_restore);
     signal(SIGTERM, signal_exit);
-
+    
     // Select mode from args
-    switch (argc)
-    {
-    case (1):
-        mode = 0;
-        break;
-    case (3):
+    if (argc == 1) mode = 0;
+    else if ((argc == 3)&&(strcmp(argv[1], "-m") == 0)){
         // Check for mode arguments
-        if (strcmp(argv[1], "-m") != 0) break;
-        if (strcmp(argv[2], "backup") == 0){
-            mode = 1;
-            break;
-        }
-        if (strcmp(argv[2], "restore") == 0){
-            mode = 2;
-            break;
-        }
-    }
+        if (strcmp(argv[2], "backup") == 0)  mode = 1;
+        if (strcmp(argv[2], "restore") == 0) mode = 2;
+    } else return 0;
 
     // printf("%s", dir_name);
     // get_library();
@@ -333,24 +336,14 @@ int main(int argc, char *argv[]){
     // Daemon start
     while (1)
     {
-        chdir(dir_name);
         switch(mode){
-            case (0):
-                // Obtain library only once
-                static int got = 0;
-                if (!got)
-                {
-                    reset_default();
-                    get_library();
-                    ext_library();
-                    default_mode();
-                    got = 1;
-                }
+            case 0:
+                branch_default();
                 break;
-            case (1):
+            case 1:
                 branch_mode(1);
                 break;
-            case (2):
+            case 2:
                 branch_mode(0);
                 break;
         }
