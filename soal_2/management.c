@@ -38,6 +38,54 @@ void signal_exit(int sig){
     exit(0);
 }
 
+void reset_default(){
+    char dir_zip[MAX_BUFFER]; 
+    strcpy(dir_zip, dir_name);
+    strcat(dir_zip, "/library.zip");
+
+    char dir_lib[MAX_BUFFER]; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library/");
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : remove library.zip
+        chdir(dir_name);
+        char *cmd = "/usr/bin/rm";
+        char *arg[] = {"rm", dir_zip, NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : remove library dir
+        chdir(dir_name);
+        char *cmd = "/usr/bin/rm";
+        char *arg[] = {"rm", "-rf", dir_lib, NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+    }
+}
+
 void get_library(){
     pid_t pid = fork();
     if (pid < 0) {
@@ -176,54 +224,6 @@ void backup_move(char *source, char *dest){
         // Parent : wait for child to die
         int status;
         waitpid(pid, &status, 0);
-    }
-}
-
-void reset_default(){
-    char dir_zip[MAX_BUFFER]; 
-    strcpy(dir_zip, dir_name);
-    strcat(dir_zip, "/library.zip");
-
-    char dir_lib[MAX_BUFFER]; 
-    strcpy(dir_lib, dir_name);
-    strcat(dir_lib, "/library/");
-
-    pid_t pid = fork();
-    if (pid < 0) {
-        printf("Error: Fork failed\n");
-        exit(1);
-    }
-    if (0 == pid){
-        // Child : remove library.zip
-        chdir(dir_name);
-        char *cmd = "/usr/bin/rm";
-        char *arg[] = {"rm", dir_zip, NULL};
-        execvp(cmd,arg);
-        exit(0);
-    }
-    else {
-        // Parent : wait for child to die
-        int status;
-        waitpid(pid, &status, 0);
-
-    pid_t pid = fork();
-    if (pid < 0) {
-        printf("Error: Fork failed\n");
-        exit(1);
-    }
-    if (0 == pid){
-        // Child : remove library dir
-        chdir(dir_name);
-        char *cmd = "/usr/bin/rm";
-        char *arg[] = {"rm", "-rf", dir_lib, NULL};
-        execvp(cmd,arg);
-        exit(0);
-    }
-    else {
-        // Parent : wait for child to die
-        int status;
-        waitpid(pid, &status, 0);
-    }
     }
 }
 
