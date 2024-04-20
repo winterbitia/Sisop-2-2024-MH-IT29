@@ -13,7 +13,7 @@
 #include <libgen.h>
 #include <dirent.h>
 
-/* Soal_2 - VERSION 0.1
+/* Soal_2 - VERSION 0.2
 Amoes Noland 5027231028
 */
 
@@ -73,17 +73,47 @@ char rot19(char input){
 }
 
 void default_mode(){
-    chdir(dir_name);
-    char *dir_back = dir_name;
+    char *dir_lib = strcat(dir_name,"/library");
 
-    DIR *dir = opendir(dir_name);
+    DIR *dir = opendir(dir_lib);
     struct dirent *ep;
     if (!dir) return;
 
-    // while(ep = readdir(dir)){
-        
-    // }
-
+    chdir(dir_lib);
+    while(ep = readdir(dir)){
+        if ((strcmp(ep->d_name, ".") == 0 )|| (strcmp(ep->d_name, "..") == 0)) continue;
+        char buffer[MAX_BUFFER], translate[MAX_BUFFER];
+        strcpy(buffer, ep->d_name);
+        // Translate the non-number prefixed files
+        if(isalpha(buffer[0])){
+            strcpy(translate, buffer);
+            for (int i=0; buffer[i] != '\0'; i++){
+                buffer[i] =  rot19(translate[i]);
+            }
+            rename(translate, buffer);
+        }
+        // Main checks for actions
+        if(strstr(buffer, "d3Let3") != NULL){
+            remove(buffer);
+        } else if(strstr(buffer, "r3N4mE") != NULL){
+            if(strstr(buffer, ".ts") != NULL){
+                rename(buffer, "helper.ts");
+            } 
+            else if(strstr(buffer, ".py") != NULL){
+                rename(buffer, "calculator.py");
+            } 
+            else if(strstr(buffer, ".go") != NULL){
+                rename(buffer, "server.go");
+            } 
+            else{
+                rename(buffer, "renamed.file");
+            } 
+        } else if(strstr(buffer, "m0V3") != NULL){
+            continue;
+        }
+        sleep(1);
+    }
+    closedir(dir);
     return;
 }
 
@@ -115,6 +145,7 @@ int main(int argc, char *argv[]){
         if (!got){
             get_library();
             ext_library();
+            default_mode();
             got = 1;
         }
         sleep(10);
