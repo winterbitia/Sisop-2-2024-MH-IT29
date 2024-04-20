@@ -13,7 +13,7 @@
 #include <libgen.h>
 #include <dirent.h>
 
-/* Soal_2 - VERSION 0.3
+/* Soal_2 - VERSION 0.4
 Amoes Noland 5027231028
 */
 
@@ -21,6 +21,22 @@ Amoes Noland 5027231028
 #define LIBRARY     "https://drive.google.com/uc?export=download&id=1rUIZmp10lXLtCIH3LAZJzRPeRks3Crup"
 #define MAX_BUFFER  1024
 char dir_name[MAX_BUFFER];
+
+// Set mode signals
+volatile sig_atomic_t mode = 0;
+
+void signal_default(int sig){
+    mode = 0;
+}
+void signal_backup(int sig){
+    mode = 1;
+}
+void signal_restore(int sig){
+    mode = 2;
+}
+void signal_exit(int sig){
+    exit(0);
+}
 
 void get_library(){
     pid_t pid = fork();
@@ -162,7 +178,56 @@ void backup_move(char *source, char *dest){
         waitpid(pid, &status, 0);
     }
 }
-void backup_or_restore(int backup){
+
+void reset_default(){
+    char dir_zip[MAX_BUFFER]; 
+    strcpy(dir_zip, dir_name);
+    strcat(dir_zip, "/library.zip");
+
+    char dir_lib[MAX_BUFFER]; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library/");
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : remove library.zip
+        chdir(dir_name);
+        char *cmd = "/usr/bin/rm";
+        char *arg[] = {"rm", dir_zip, NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : remove library dir
+        chdir(dir_name);
+        char *cmd = "/usr/bin/rm";
+        char *arg[] = {"rm", "-rf", dir_lib, NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+    }
+}
+
+void branch_mode(int backup){
     char dir_lib[MAX_BUFFER]; 
     strcpy(dir_lib, dir_name);
     strcat(dir_lib, "/library/");
@@ -213,6 +278,31 @@ void backup_or_restore(int backup){
 int main(int argc, char *argv[]){
     getcwd(dir_name, sizeof(dir_name));
 
+    signal(SIGRTMIN, signal_default);
+    signal(SIGUSR1, signal_backup);
+    signal(SIGUSR2, signal_restore);
+    signal(SIGTERM, signal_exit);
+
+    switch (argc)
+    {
+    case (1):
+        mode = 0;
+        break;
+    case (3):
+        // Check for mode arguments
+        if (strcmp(argv[1], "-m") != 0) break;
+        if (strcmp(argv[2], "backup") == 0){
+            mode = 1;
+            break;
+        }
+        if (strcmp(argv[2], "restore") == 0){
+            mode = 2;
+            break;
+        }
+    default:
+        break;
+    }
+
     // printf("%s", dir_name);
     // get_library();
     // ext_library();
@@ -234,30 +324,27 @@ int main(int argc, char *argv[]){
     while (1)
     {
         chdir(dir_name);
-        switch (argc)
-        {
-        case (1):
-            // Obtain library only once
-            static int got = 0;
-            if (!got)
-            {
-                get_library();
-                ext_library();
-                default_mode();
-                got = 1;
-            }
-            break;
-        case (3):
-            // Check for mode arguments
-            if (strcmp(argv[1], "-m") != 0)
+        switch(mode){
+            case (0):
+                // Obtain library only once
+                static int got = 0;
+                if (!got)
+                {
+                    reset_default();
+                    get_library();
+                    ext_library();
+                    default_mode();
+                    got = 1;
+                }
                 break;
-            if (strcmp(argv[2], "backup") == 0)
-                backup_or_restore(1);
-            if (strcmp(argv[2], "restore") == 0)
-                backup_or_restore(0);
-            break;
-        default:
-            break;
+            case (1):
+                branch_mode(1);
+                break;
+            case (2):
+                branch_mode(0);
+                break;
+            default:
+                break;
         }
         sleep(10);
     }
