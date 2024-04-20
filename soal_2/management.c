@@ -24,7 +24,6 @@ char dir_name[MAX_BUFFER];
 
 // Set mode signals
 volatile sig_atomic_t mode = 0;
-
 void signal_default(int sig){
     mode = 0;
 }
@@ -38,6 +37,7 @@ void signal_exit(int sig){
     exit(0);
 }
 
+// Deletes all library starting files
 void reset_default(){
     char dir_zip[MAX_BUFFER]; 
     strcpy(dir_zip, dir_name);
@@ -86,6 +86,7 @@ void reset_default(){
     }
 }
 
+// Gets library archive
 void get_library(){
     pid_t pid = fork();
     if (pid < 0) {
@@ -108,6 +109,7 @@ void get_library(){
     }
 }
 
+// Extracts library archive
 void ext_library(){
     pid_t pid = fork();
     if (pid < 0) {
@@ -129,12 +131,14 @@ void ext_library(){
     }
 }
 
+// ROT19 translator module
 char rot19(char input){
    if (!(isalpha(input))) return input;
    char base = islower(input) ? 'a':'A';
    return (input - base + 7) % 26 + base;
 }
 
+// Main rename loop
 void default_mode(){
     char *dir_lib; 
     strcpy(dir_lib, dir_name);
@@ -176,18 +180,20 @@ void default_mode(){
         } else if(strstr(buffer, "m0V3") != NULL){
             continue;
         }
-        sleep(1);
+        // sleep(1);
     }
     closedir(dir);
     return;
 }
 
+// Checks existence of a directory
 int backup_check(const char *dir_bak){
     struct stat stats;
     if (stat(dir_bak, &stats) == 0) return 0;
     return 1;
 }
 
+// Function to make directory
 void backup_init(char *dir_bak){
     pid_t pid = fork();
     if (pid < 0) {
@@ -207,6 +213,7 @@ void backup_init(char *dir_bak){
     }
 }
 
+// Function to move selected item
 void backup_move(char *source, char *dest){
     pid_t pid = fork();
     if (pid < 0) {
@@ -227,6 +234,7 @@ void backup_move(char *source, char *dest){
     }
 }
 
+// Main function for backup and restore
 void branch_mode(int backup){
     char dir_lib[MAX_BUFFER]; 
     strcpy(dir_lib, dir_name);
@@ -269,20 +277,23 @@ void branch_mode(int backup){
 
         if (backup) backup_move(buffer_lib, buffer_bak);
         else        backup_move(buffer_bak, buffer_lib);
-        sleep(1);
+        // sleep(1);
     }
     closedir(dir);
     return;
 }
 
 int main(int argc, char *argv[]){
+    // Save current directory to global var
     getcwd(dir_name, sizeof(dir_name));
 
+    // Attempt to grab signals
     signal(SIGRTMIN, signal_default);
     signal(SIGUSR1, signal_backup);
     signal(SIGUSR2, signal_restore);
     signal(SIGTERM, signal_exit);
 
+    // Select mode from args
     switch (argc)
     {
     case (1):
@@ -299,8 +310,6 @@ int main(int argc, char *argv[]){
             mode = 2;
             break;
         }
-    default:
-        break;
     }
 
     // printf("%s", dir_name);
@@ -321,6 +330,7 @@ int main(int argc, char *argv[]){
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 
+    // Daemon start
     while (1)
     {
         chdir(dir_name);
@@ -342,8 +352,6 @@ int main(int argc, char *argv[]){
                 break;
             case (2):
                 branch_mode(0);
-                break;
-            default:
                 break;
         }
         sleep(10);
