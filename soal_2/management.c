@@ -13,7 +13,7 @@
 #include <libgen.h>
 #include <dirent.h>
 
-/* Soal_2 - VERSION 0.2
+/* Soal_2 - VERSION 0.3
 Amoes Noland 5027231028
 */
 
@@ -34,7 +34,6 @@ void get_library(){
         char *cmd = "/usr/bin/wget";
         char *arg[] = {"wget", "--no-check-certificate", "--content-disposition",
                       LIBRARY, "-P", dir_name, NULL};
-
         execvp(cmd,arg);
         exit(0);
     }
@@ -73,7 +72,10 @@ char rot19(char input){
 }
 
 void default_mode(){
-    char *dir_lib = strcat(dir_name,"/library");
+    char *dir_lib; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library");
+    char buffer[MAX_BUFFER], translate[MAX_BUFFER];
 
     DIR *dir = opendir(dir_lib);
     struct dirent *ep;
@@ -82,7 +84,6 @@ void default_mode(){
     chdir(dir_lib);
     while(ep = readdir(dir)){
         if ((strcmp(ep->d_name, ".") == 0 )|| (strcmp(ep->d_name, "..") == 0)) continue;
-        char buffer[MAX_BUFFER], translate[MAX_BUFFER];
         strcpy(buffer, ep->d_name);
         // Translate the non-number prefixed files
         if(isalpha(buffer[0])){
@@ -117,10 +118,105 @@ void default_mode(){
     return;
 }
 
+int backup_check(const char *dir_bak){
+    struct stat stats;
+    if (stat(dir_bak, &stats) == 0) return 0;
+    return 1;
+}
+
+void backup_init(char *dir_bak){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : make directory
+        char *cmd = "/usr/bin/mkdir";
+        char *arg[] = {"mkdir", dir_bak, NULL};
+        execvp(cmd, arg);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+
+void backup_move(char *buffer_lib, char *buffer_bak){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : make directory
+        char *cmd = "/usr/bin/mv";
+        char *arg[] = {"mv", buffer_lib, buffer_bak, NULL};
+        execvp(cmd, arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+void backup_mode(){
+    char dir_lib[MAX_BUFFER]; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library/");
+    
+    char dir_bak[MAX_BUFFER];
+    strcpy(dir_bak, dir_lib);
+    strcat(dir_bak,"backup/");
+
+    char buffer[MAX_BUFFER],
+    buffer_lib[MAX_BUFFER],
+    buffer_bak[MAX_BUFFER];
+
+    // printf("%s\n", dir_lib);
+    // printf("%s\n", dir_bak);
+    // printf("%d\n", backup_check(dir_bak));
+
+    if (backup_check(dir_bak)) backup_init(dir_bak);
+
+    DIR *dir = opendir(dir_lib);
+    struct dirent *ep;
+    if (!dir) return;
+
+
+    while(ep = readdir(dir)){
+        strcpy(buffer, ep->d_name);
+        if ((strcmp(ep->d_name, ".") == 0 )||
+            (strcmp(ep->d_name, "..") == 0)||
+            (strstr(buffer, "m0V3") == NULL)) continue;
+
+        strcpy(buffer_lib, dir_lib);
+        strcpy(buffer_bak, dir_bak);
+        strcat(buffer_lib, buffer);
+        strcat(buffer_bak, buffer);
+
+        // printf("%s\n", buffer);
+        // printf("%s\n", buffer_lib);
+        // printf("%s\n", buffer_bak);
+
+        backup_move(buffer_lib, buffer_bak);
+        sleep(1);
+    }
+    closedir(dir);
+    return;
+}
+
+void restore_mode(){
+    return;
+}
+
+
 int main(int argc, char *argv[]){
     getcwd(dir_name, sizeof(dir_name));
-    // printf("%s", dir_name);
 
+    // printf("%s", dir_name);
     // get_library();
     // ext_library();
 
@@ -138,15 +234,33 @@ int main(int argc, char *argv[]){
     close(STDOUT_FILENO);
     close(STDERR_FILENO);
 
-    while (1) {
+    while (1)
+    {
         chdir(dir_name);
-        // Obtain library only once
-        static int got = 0;
-        if (!got){
-            get_library();
-            ext_library();
-            default_mode();
-            got = 1;
+        switch (argc)
+        {
+        case (1):
+            // Obtain library only once
+            static int got = 0;
+            if (!got)
+            {
+                get_library();
+                ext_library();
+                default_mode();
+                got = 1;
+            }
+            break;
+        case (3):
+            // Check for mode arguments
+            if (strcmp(argv[1], "-m") != 0)
+                break;
+            if (strcmp(argv[2], "backup") == 0)
+                backup_mode();
+            if (strcmp(argv[2], "restore") == 0)
+                restore_mode();
+            break;
+        default:
+            break;
         }
         sleep(10);
     }
