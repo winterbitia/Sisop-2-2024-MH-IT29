@@ -3,3 +3,16 @@
 - Dian Anggraeni Putri (5027231016)
 - Amoes Noland (5027231028)
 - Malvin Putra Rismahardian (5027231048)
+
+
+## Soal 1
+> Dikerjakan oleh: Dian Anggraeni Putri (5027231016)
+
+## Soal 2
+> Dikerjakan oleh: Amoes Noland (5027231028)
+
+## Soal 3
+> Dikerjakan oleh: Malvin Putra Rismahardian (5027231048)
+
+## Soal 4
+> Dikerjakan oleh: Amoes Noland (5027231028)
