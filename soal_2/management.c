@@ -230,24 +230,22 @@ void default_mode(){
         }
         // Main checks for actions
         if(strstr(buffer, "d3Let3") != NULL){
-            log_write(buffer, 2);
             remove(buffer);
+            log_write(buffer, 2);
         } else if(strstr(buffer, "r3N4mE") != NULL){
             if(strstr(buffer, ".ts") != NULL){
-                log_write(buffer, 1);
                 rename(buffer, "helper.ts");
-            } 
-            else if(strstr(buffer, ".py") != NULL){
                 log_write(buffer, 1);
+            } 
                 rename(buffer, "calculator.py");
-            } 
-            else if(strstr(buffer, ".go") != NULL){
                 log_write(buffer, 1);
+            } 
                 rename(buffer, "server.go");
+                log_write(buffer, 1);
             } 
             else{
-                log_write(buffer, 1);
                 rename(buffer, "renamed.file");
+                log_write(buffer, 1);
             } 
         } else if(strstr(buffer, "m0V3") != NULL){
             continue;
