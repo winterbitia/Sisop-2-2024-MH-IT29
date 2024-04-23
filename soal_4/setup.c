@@ -176,6 +176,10 @@ int main(int argc, char *argv[])
 {  
     // Read input arguments
     // Switch case to select option from 2nd char from argv[1]
+    if (argv[1][0] != '-'){
+        printf("Exited: Invalid option");
+        exit(1);
+    }
     switch (argv[1][1])
     {
         case 'o':
