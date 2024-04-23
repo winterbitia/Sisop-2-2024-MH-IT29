@@ -236,10 +236,12 @@ void default_mode(){
             if(strstr(buffer, ".ts") != NULL){
                 rename(buffer, "helper.ts");
                 log_write(buffer, 1);
-            } 
+            }
+       else if(strstr(buffer, ".py") != NULL){ 
                 rename(buffer, "calculator.py");
                 log_write(buffer, 1);
-            } 
+            }
+       else if(strstr(buffer, ".go") != NULL){ 
                 rename(buffer, "server.go");
                 log_write(buffer, 1);
             } 
