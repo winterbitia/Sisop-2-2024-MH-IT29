@@ -11,6 +11,470 @@
 ## Soal 2
 > Dikerjakan oleh: Amoes Noland (5027231028)
 
+Soal kedua menyuruh kita untuk membuat sebuah daemon yang berfungsi untuk melakukan manipulasi file sesuai yang diminta oleh soal. Untuk itu, perlu diketahui bahwa diperlukan batas buffer untuk banyak string yang akan dibuat, dan peraturan daemon yang mewajibkan directory path lengkap. Sehingga dipersiapkan global variabel sebagai berikut:
+
+```c
+// Define some global variables
+#define LIBRARY     "https://drive.google.com/uc?export=download&id=1rUIZmp10lXLtCIH3LAZJzRPeRks3Crup"
+#define MAX_BUFFER  1024
+char dir_name[MAX_BUFFER];
+```
+
+Dan terdapat satu baris pada main yang terhubung dengan global variable **dir_name** yang krusial untuk semua fungsi lain:
+
+```c
+    // Save current directory to global var
+    getcwd(dir_name, sizeof(dir_name));
+```
+
+Juga dilakukan inisialisasi daemon yang dilakukan dengan cara:
+
+- Fork pertama berdasarkan PID
+- Berikan permission lengkap
+- Exit parent
+- Fork kedua berdasarkan SID
+- Change directory ke dalam root
+- Tutup semua input/output standard
+
+```c
+    pid_t pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS);
+
+    umask(0);
+
+    pid_t sid = setsid();
+    if (sid < 0)        exit(EXIT_FAILURE);
+    if (chdir("/") < 0) exit(EXIT_FAILURE);
+
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    // Daemon start
+    while (1)
+    {
+        switch(mode){
+            case (0):
+                branch_default();
+                break;
+            case (1):
+                branch_mode(1);
+                break;
+            case (2):
+                branch_mode(0);
+                break;
+        }
+        sleep(1000);
+    }
+```
+
+Tugas pertama pada daemon adalah untuk melakukan download dan unzip sebuah file .zip yang terdapat dalam sebuah Google Drive. Hal ini dilakukan dengan kombinasi `fork()` dan `exec()`.
+
+Berikut adalah fungsi **get_library** untuk mendapatkan library dengan fungsi wget:
+
+```c
+// Gets library archive
+void get_library(){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : exec process
+        chdir(dir_name);
+        char *cmd = "/usr/bin/wget";
+        char *arg[] = {"wget", "--no-check-certificate", "--content-disposition",
+                      LIBRARY, "-P", dir_name, NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+```
+
+Berikut adalah fungsi **ext_library** untuk melakukan unzip library:
+
+```c
+// Extracts library archive
+void ext_library(){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : exec process
+        chdir(dir_name);
+        char *cmd = "/usr/bin/unzip";
+        char *arg[] = {"unzip", "library.zip", NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+```
+
+Langkah berikutnya yang diminta adalah untuk melakukan dekripsi nama file ke-7 (6 file pertama dapat dibedakan karena mereka dimulai dengan angka) hingga terakhir menggunakan algoritma ROT-19 (geser huruf). Dasar fungsi yang akan digunakan menerima input char dan melakukan return hasil dekripsi char secara ROT-19.
+
+```c
+// ROT19 translator module
+char rot19(char input){
+   if (!(isalpha(input))) return input;
+   char base = islower(input) ? 'a':'A';
+   return (input - base + 7) % 26 + base;
+}
+```
+
+Fungsi ini akan digunakan dalam sebuah loop yang melakukan rename pada semua file di dalam directory library yang memenuhi kriteria:
+```c
+// Main rename loop
+void default_mode(){
+    char dir_lib[MAX_BUFFER]; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library");
+    char buffer[MAX_BUFFER], translate[MAX_BUFFER];
+
+    DIR *dir = opendir(dir_lib);
+    struct dirent *ep;
+    if (!dir) return;
+
+    chdir(dir_lib);
+    while(ep = readdir(dir)){
+        if ((strcmp(ep->d_name, ".") == 0 )|| (strcmp(ep->d_name, "..") == 0)) continue;
+        strcpy(buffer, ep->d_name);
+        // Translate the non-number prefixed files
+        if(isalpha(buffer[0])){
+            strcpy(translate, buffer);
+            for (int i=0; buffer[i] != '\0'; i++){
+                buffer[i] =  rot19(translate[i]);
+            }
+            rename(translate, buffer);
+        }
+```
+
+Setelah dekripsi selesai, kita harus melihat nama file untuk mencari kode r3N4mE, d3Let3, dan m0V3.
+
+- d3Let3 : hapus file
+- r3N4mE : rename file sesuai ketentuan pada soal
+- m0V3 : untuk perintah berikutnya (mode)
+
+Segala hasil rename dan delete akan tercatat dalam sebuah log file yang akan nanti dibahas lebih lanjut.
+
+```c
+        // Main checks for actions
+        if(strstr(buffer, "d3Let3") != NULL){
+            remove(buffer);
+            log_write(buffer, 2);
+        } else if(strstr(buffer, "r3N4mE") != NULL){
+            if(strstr(buffer, ".ts") != NULL){
+                rename(buffer, "helper.ts");
+                log_write(buffer, 1);
+            }
+       else if(strstr(buffer, ".py") != NULL){ 
+                rename(buffer, "calculator.py");
+                log_write(buffer, 1);
+            }
+       else if(strstr(buffer, ".go") != NULL){ 
+                rename(buffer, "server.go");
+                log_write(buffer, 1);
+            } 
+            else{
+                rename(buffer, "renamed.file");
+                log_write(buffer, 1);
+            } 
+        } else if(strstr(buffer, "m0V3") != NULL){
+            continue;
+        }
+        // sleep(1);
+    }
+    closedir(dir);
+    return;
+}
+```
+
+Untuk langkah berikutnya kita harus membuat mode *backup* dan *restore* yang dapat dipanggil dengan command yang sesuai sehingga diperlukan if conditional yang membaca argument sesuai option `-m backup` atau `-m restore` sehingga terlihat seperti berikut.
+
+```c
+    // Select mode from args
+    if ((argc == 3)&&(strcmp(argv[1], "-m") == 0)){
+        // Check for mode arguments
+        if (strcmp(argv[2], "backup") == 0)  mode = 1;
+        if (strcmp(argv[2], "restore") == 0) mode = 2;
+    }
+```
+
+Untuk menentukan cabang mode, dilakukan switch case pada loop utama daemon sebagai berikut:
+
+```c
+    // Daemon start
+    while (1)
+    {
+        switch(mode){
+            case (0):
+                branch_default();
+                break;
+            case (1):
+                branch_mode(1);
+                break;
+            case (2):
+                branch_mode(0);
+                break;
+        }
+        sleep(1000);
+    }
+```
+
+Dengan pertama fungsi **branch_default** yang memanggil deretan fungsi yang akan hanya dijalankan sekali:
+
+*catatan: reset_default merupakan fungsi yang digunakan untuk testing menghapus file library setiap kali mode default berhasil dijalankan.*
+
+*catatan 2: touch_log akan relevan pada bagian pembuatan history log*
+
+```c
+void branch_default(){
+    // Obtain library only once
+    static int got = 0;
+    if (!got)
+    {
+        reset_default();
+        touch_log();
+        get_library();
+        ext_library();
+        default_mode();
+        got = 1;
+    }
+}
+```
+
+Karena mode backup dan restore pada intinya hanya dilakukan perpindahan file, maka dipanggil melalui fungsi yang sama namun hanya dengan urutan destinasi yang berbeda. Tetapi, untuk memastikan bahwa fungsi berjalan dengan baik, terdapat beberapa fungsi dependency yang berpengaruh seperti:
+
+**backup_check** : memastikan folder backup ada
+
+```c
+// Checks existence of a directory
+int backup_check(const char *dir_bak){
+    struct stat stats;
+    if (stat(dir_bak, &stats) == 0) return 0;
+    return 1;
+}
+```
+
+**backup_init** : membuat folder backup
+
+```c
+// Function to make directory
+void backup_init(char *dir_bak){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : make directory
+        char *cmd = "/usr/bin/mkdir";
+        char *arg[] = {"mkdir", dir_bak, NULL};
+        execvp(cmd, arg);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+```
+
+**backup_move** : fork untuk memindahkan file
+
+```c
+// Function to move selected item
+void backup_move(char *source, char *dest){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : make directory
+        char *cmd = "/usr/bin/mv";
+        char *arg[] = {"mv", source, dest, NULL};
+        execvp(cmd, arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+```
+
+**branch_mode** : fungsi utama dari mode backup dan restore yang dibedakan dengan variabel `int backup`
+
+```c
+// Main function for backup and restore
+void branch_mode(int backup){
+    char dir_lib[MAX_BUFFER]; 
+    strcpy(dir_lib, dir_name);
+    strcat(dir_lib, "/library/");
+    
+    char dir_bak[MAX_BUFFER];
+    strcpy(dir_bak, dir_lib);
+    strcat(dir_bak,"backup/");
+
+    char buffer[MAX_BUFFER],
+    buffer_lib[MAX_BUFFER],
+    buffer_bak[MAX_BUFFER];
+
+    if (backup_check(dir_bak)) backup_init(dir_bak);
+
+    DIR *dir;
+    if (backup) dir = opendir(dir_lib);
+    else        dir = opendir(dir_bak);
+    struct dirent *ep;
+    if (!dir) return;
+
+    while(ep = readdir(dir)){
+        strcpy(buffer, ep->d_name);
+        if ((strcmp(ep->d_name, ".") == 0 )||
+            (strcmp(ep->d_name, "..") == 0)||
+            (strstr(buffer, "m0V3") == NULL)) continue;
+
+        strcpy(buffer_lib, dir_lib);
+        strcpy(buffer_bak, dir_bak);
+        strcat(buffer_lib, buffer);
+        strcat(buffer_bak, buffer);
+
+        if (backup) backup_move(buffer_lib, buffer_bak);
+        else        backup_move(buffer_bak, buffer_lib);
+        log_write(buffer, 4-backup);
+        // sleep(1);
+    }
+    closedir(dir);
+    return;
+}
+```
+
+Fitur berikutnya yang diperlukan adalah untuk memanggil signal, yang dilakukan dengan membuat sebuah variabel atomic yang dinamis sehingga dapat dihubungkan dengan sebuah signal handler:
+
+```c
+// Set mode signals
+volatile sig_atomic_t mode = 0;
+void signal_handler(int sig){
+    switch (sig)
+    {
+    case 34:
+        mode = 0;
+        break;
+    case SIGUSR1:
+        mode = 1;
+        break;
+    case SIGUSR2:
+        mode = 2;
+        break;
+    case SIGTERM:
+        exit(EXIT_SUCCESS);
+        break;
+    }
+}
+```
+
+Signal handler tersebut dihubungkan pada main agar dapat inisialisasi signal handling sesuai kode signal:
+
+```c
+void set_signals(){
+    // Attempt to grab signals
+    signal(SIGRTMIN, signal_handler);
+    signal(SIGUSR1,  signal_handler);
+    signal(SIGUSR2,  signal_handler);
+    signal(SIGTERM,  signal_handler);
+}
+```
+
+Terakhir, diperlukan sistem mencatat log yang pertama harus dimulai dengan memastikan bahwa file log sudah ada dengan menjalankan fungsi touch yang terdapat pada **touch_log**:
+
+```c
+void touch_log(){
+    pid_t pid = fork();
+    if (pid < 0) {
+        printf("Error: Fork failed\n");
+        exit(1);
+    }
+    if (0 == pid){
+        // Child : exec process
+        chdir(dir_name);
+        char *cmd = "/usr/bin/touch";
+        char *arg[] = {"touch", "history.log", NULL};
+        execvp(cmd,arg);
+        exit(0);
+    }
+    else {
+        // Parent : wait for child to die
+        int status;
+        waitpid(pid, &status, 0);
+    }
+}
+```
+
+Untuk penulisan log sudah terhubung dengan semua kejadian yang ingin dicatat, dan dilakukan melalui sebuah kode aksi yang dihubungkan dengan sebuah switch case.
+
+Penulisan log itu sendiri diperlukan username yang didapat melalui `getlogin_r` dan waktu yang diperoleh dari library `<time.h>`
+
+```c
+// Log setup
+void log_write(char *name, int act_code){
+    char  dir_log[MAX_BUFFER]; 
+    strcpy(dir_log, dir_name);
+    strcat(dir_log, "/history.log");
+
+    FILE *file;
+    file = fopen(dir_log, "a");
+    if (!file) return; 
+    
+    char uname[MAX_BUFFER]; getlogin_r(uname, sizeof(uname));
+    char buffer[MAX_BUFFER];
+    time_t timevar; struct tm *timeinfo;
+    time (&timevar); timeinfo = localtime (&timevar);
+
+    // 1 == rename, 2 == delete, 3 == backup, 4 == restore
+    switch (act_code)
+    {
+    case 1:
+        sprintf(buffer, "[%s][%02d:%02d:%02d] - %s - Succesfully renamed.",
+        uname, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, name);
+        break;
+    case 2:
+        sprintf(buffer, "[%s][%02d:%02d:%02d] - %s - Succesfully deleted.",
+        uname, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, name);
+        break;
+    case 3:
+        sprintf(buffer, "[%s][%02d:%02d:%02d] - %s - Succesfully moved to backup.",
+        uname, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, name);
+        break;
+    case 4:
+        sprintf(buffer, "[%s][%02d:%02d:%02d] - %s - Succesfully restored from backup.",
+        uname, timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec, name);
+        break;
+    }
+
+    fprintf(file, "%s\n", buffer);
+    fclose(file);
+}
+```
+
+### Kendala
+
+Signal tidak dapat berdampak meskipun menggunakan kode signal apapun (-10, -USR1, -SIGUSR1), sehingga tidak sesuai dengan tujuan utama yaitu mengganti variabel mode. Tetapi hanya menetap pada mode default dan pada akhirnya membuat jumlah child process yang sangat banyak dan tidak sesuai keinginan.
+
 ## Soal 3
 > Dikerjakan oleh: Malvin Putra Rismahardian (5027231048)
 
