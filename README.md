@@ -202,6 +202,10 @@ Segala hasil rename dan delete akan tercatat dalam sebuah log file yang akan nan
 }
 ```
 
+Berikut adalah hasil ketika `./management` dijalankan:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232703556595875861/Screenshot_20240424_214037.png?ex=662a6c26&is=66291aa6&hm=dc6c033838bca4d33aeacf08017481ea3412b29f12a16ee7769a0a737c81a62a&=&format=webp&quality=lossless&width=703&height=396)
+
 Untuk langkah berikutnya kita harus membuat mode *backup* dan *restore* yang dapat dipanggil dengan command yang sesuai sehingga diperlukan if conditional yang membaca argument sesuai option `-m backup` atau `-m restore` sehingga terlihat seperti berikut.
 
 ```c
@@ -364,6 +368,10 @@ void branch_mode(int backup){
 }
 ```
 
+Berikut adalah hasil ketika `./management` dijalankan dengan mode backup dan restore:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232703556084306002/Screenshot_20240424_214114.png?ex=662a6c26&is=66291aa6&hm=18b36f7c2bcd88cb74de00bd9ea12ed7c0ca6e629a253f4fd64c08cdcdf5435c&=&format=webp&quality=lossless&width=703&height=396)
+
 Fitur berikutnya yang diperlukan adalah untuk memanggil signal, yang dilakukan dengan membuat sebuah variabel atomic yang dinamis sehingga dapat dihubungkan dengan sebuah signal handler:
 
 ```c
@@ -399,6 +407,11 @@ void set_signals(){
     signal(SIGTERM,  signal_handler);
 }
 ```
+
+Berikut adalah hasil ketika perubahan mode dijalankan dengan mengirimkan signal:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232703554884734997/Screenshot_20240424_214212.png?ex=662a6c26&is=66291aa6&hm=23092bc2240531f8600eea7cfd984be2e103764519792602a54e3748d13d0939&=&format=webp&quality=lossless&width=703&height=396)
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232703554410643517/Screenshot_20240424_214241.png?ex=662a6c25&is=66291aa5&hm=d83e433fe008ac5a57a11f70426e6461b139e988164d816ed8e9a1be0760570f&=&format=webp&quality=lossless&width=703&height=396)
 
 Terakhir, diperlukan sistem mencatat log yang pertama harus dimulai dengan memastikan bahwa file log sudah ada dengan menjalankan fungsi touch yang terdapat pada **touch_log**:
 
