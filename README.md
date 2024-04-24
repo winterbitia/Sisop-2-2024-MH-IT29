@@ -595,6 +595,10 @@ void open(int argc, char *argv[])
 }
 ```
 
+Berikut adalah contoh penerapan membuka banyak window sekaligus:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232545567973052486/Screenshot_20240424_111026.png?ex=6629d902&is=66288782&hm=4b4fa02987db382a7281d48ba7911f88bf256d8e0af83ab8115c8c55f6a49516&=&format=webp&quality=lossless&width=703&height=396)
+
 Berikut adalah contoh temp file yang dihasilkan dari membuka 3 window:
 
 ```
@@ -662,6 +666,11 @@ void open_file(int argc, char *argv[]){
 }
 ```
 
+Berikut adalah contoh penerapan membuka banyak window menggunakan sebuah file konfigurasi:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232545566874144788/Screenshot_20240424_111430.png?ex=6629d902&is=66288782&hm=e86a902073c3b45e51a942d05ebf48f2cfe6f61b4d501176facaa2a8e82bb6b8&=&format=webp&quality=lossless&width=703&height=342)
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232545566601252884/Screenshot_20240424_111451.png?ex=6629d902&is=66288782&hm=943adc9b5a95262b47714a5cb97beb240c392cd6f3d2f8a928cb4f64646d1e46&=&format=webp&quality=lossless&width=703&height=396)
+
 Untuk fungsi ketiga, kita disuruh untuk mematikan hanya  aplikasi yang sudah dijalankan sebelumnya, atau berdasarkan konfigurasi dengan format command:
 
 ```
@@ -698,6 +707,10 @@ void kill_temp(){
 }
 ```
 
+Berikut adalah contoh hasil akhir penerapan kill window dari panggilan command -o:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232545567192907879/Screenshot_20240424_111051.png?ex=6629d902&is=66288782&hm=eeb239c30334501621dc20a370cf0ef78d7cc20641c94221f240e54273945eeb&=&format=webp&quality=lossless&width=703&height=396)
+
 Untuk fungsi **kill_file** pada dasarnya menggunakan prinsip yang sama dengan fungsi **open_file** untuk cara parsing yang dilakukan, tetapi dengan command execlp yang berbeda, karena bertujuan untuk kill process yang disebutkan pada argumen command yang diberikan pada file konfigurasi.
 
 ```c
@@ -729,6 +742,10 @@ void kill_file(int argc, char *argv[]){
     }
 }
 ```
+
+Berikut adalah contoh hasil akhir penerapan kill window dari panggilan command -f:
+
+![alt text](https://media.discordapp.net/attachments/1071478813566976151/1232545567192907879/Screenshot_20240424_111051.png?ex=6629d902&is=66288782&hm=eeb239c30334501621dc20a370cf0ef78d7cc20641c94221f240e54273945eeb&=&format=webp&quality=lossless&width=703&height=396)
 
 ### Kendala
 Terdapat sebuah kendala pada fungsi **kill_file** di mana pkill tidak bisa melakukan kill process sesuai jumlah yang ditentukan karena command membunuh *semua* proses dengan nama yang tercatat pada file konfigurasi.
