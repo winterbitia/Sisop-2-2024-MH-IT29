@@ -471,10 +471,6 @@ void log_write(char *name, int act_code){
 }
 ```
 
-### Kendala
-
-Signal tidak dapat berdampak meskipun menggunakan kode signal apapun (-10, -USR1, -SIGUSR1), sehingga tidak sesuai dengan tujuan utama yaitu mengganti variabel mode. Tetapi hanya menetap pada mode default dan pada akhirnya membuat jumlah child process yang sangat banyak dan tidak sesuai keinginan.
-
 ## Soal 3
 > Dikerjakan oleh: Malvin Putra Rismahardian (5027231048)
 
