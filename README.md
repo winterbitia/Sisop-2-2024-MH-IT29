@@ -4,9 +4,177 @@
 - Amoes Noland (5027231028)
 - Malvin Putra Rismahardian (5027231048)
 
-
 ## Soal 1
 > Dikerjakan oleh: Dian Anggraeni Putri (5027231016)
+
+### 1a
+Saya membuat program menerima path direktori sebagai input melalui argumen argv[1]. Path ini menentukan folder di mana program akan menelusuri file-file untuk dieksekusi. Bagian ini berada di fungsi main():
+ ```sh
+int main(int argc, char *argv[]) {
+    // Mengecek apakah argumen path diberikan
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <directory_path>\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // Memulai loop utama daemon
+    while (1) {
+        sleep(15);
+        traverseDirectory(argv[1]); // Menelusuri direktori yang diberikan melalui argv[1]
+    }
+
+    return 0;
+}
+ ```
+
+### 1b
+Dalam program ini, ada beberapa string yang perlu diganti berdasarkan ketentuan soal:
+- String "m4LwAr3" diganti dengan "[MALWARE]".
+- String "5pYw4R3" diganti dengan "[SPYWARE]".
+- String "R4nS0mWaR3" diganti dengan "[RANSOMWARE]".
+Untuk mengganti string, saya menggunakan fungsi replaceString(). Fungsi ini menerima teks asli, kata yang ingin diganti (oldWord), dan kata pengganti (newWord). Fungsi ini mengembalikan teks yang telah dimodifikasi dengan kata pengganti. Potongan kode fungsi replaceString():
+ ```sh
+char *replaceString(char *str, char *oldWord, char *newWord) {
+    char *result, *temp, *start = str;
+    int oldWordLen = strlen(oldWord);
+    int newWordLen = strlen(newWord);
+    int length = 0;
+
+    // Menghitung panjang teks hasil setelah penggantian kata
+    while ((temp = strstr(start, oldWord))) {
+        length += temp - start;
+        start = temp + oldWordLen;
+        length += newWordLen;
+    }
+    length += strlen(start) + 1;
+
+    // Alokasi memori untuk hasil modifikasi
+    result = (char *)malloc(length);
+    start = str;
+    *result = '\0';
+
+    // Melakukan penggantian kata
+    while ((temp = strstr(start, oldWord))) {
+        strncat(result, start, temp - start);
+        strcat(result, newWord);
+        start = temp + oldWordLen;
+    }
+
+    // Tambahkan sisa teks
+    strcat(result, start);
+    return result;
+}
+ ```
+
+Lalu, fungsi processFile() bertugas membaca isi file, mengganti string dalam file sesuai dengan ketentuan, dan menulis kembali konten yang telah dimodifikasi jika ada perubahan. Potongan kode fungsi processFile():
+ ```sh
+void processFile(const char *dirPath, const char *fileName) {
+    char filePath[1024];
+    sprintf(filePath, "%s/%s", dirPath, fileName);
+
+    // Membuka file dalam mode baca
+    FILE *file = fopen(filePath, "r");
+    if (file != NULL) {
+        char buffer[1024];
+        fread(buffer, 1, sizeof(buffer), file);
+        fclose(file);
+
+        // Membuat salinan isi buffer untuk dimodifikasi
+        char *modifiedContent = strdup(buffer);
+        modifiedContent = replaceString(modifiedContent, "m4LwAr3", "[MALWARE]");
+        modifiedContent = replaceString(modifiedContent, "5pYw4R3", "[SPYWARE]");
+        modifiedContent = replaceString(modifiedContent, "R4nS0mWaR3", "[RANSOMWARE]");
+
+        // Jika ada perubahan, tulis kembali ke file
+        if (strcmp(buffer, modifiedContent) != 0) {
+            file = fopen(filePath, "w");
+            fputs(modifiedContent, file);
+            fclose(file);
+            logActivity(dirPath, fileName);
+        }
+
+        // Bebaskan memori
+        free(modifiedContent);
+    }
+}
+ ```
+
+### 1c
+Program dijalankan sebagai daemon, artinya berjalan di latar belakang tanpa interaksi dengan terminal. Program menggunakan fork untuk membuat child process, sedangkan parent process keluar untuk memberikan jalan bagi child process menjadi daemon. Potongan kode pengaturan daemon:
+ ```sh
+int main(int argc, char *argv[]) {
+    pid_t pid = fork(); // Membuat proses child
+
+    if (pid < 0) {
+        exit(EXIT_FAILURE); // Gagal membuat proses
+    }
+
+    if (pid > 0) {
+        exit(EXIT_SUCCESS); // Keluar dari proses induk
+    }
+
+    umask(0); // Mengatur umask untuk izin penuh
+    sid = setsid(); // Membuat sesi baru untuk proses daemon
+
+    if (sid < 0) {
+        exit(EXIT_FAILURE); // Gagal membuat sesi baru
+    }
+
+    if (chdir("/") < 0) {
+        exit(EXIT_FAILURE); // Gagal mengubah direktori kerja
+    }
+
+    // Tutup input/output/error standar
+    close(STDIN_FILENO);
+    close(STDOUT_FILENO);
+    close(STDERR_FILENO);
+
+    // Loop utama daemon
+    while (1) {
+        sleep(15);
+        traverseDirectory(argv[1]);
+    }
+
+    return 0;
+}
+ ```
+
+### 1d
+Program berjalan dalam loop utama yang berulang terus menerus. Setiap 15 detik, program akan sleep menggunakan sleep(15), kemudian melanjutkan penelusuran direktori dengan memanggil traverseDirectory(argv[1]). Hal ini memungkinkan program berjalan berkala setiap 15 detik. Potongan kode loop utama dalam main():
+ ```sh
+while (1) {
+    sleep(15);
+    traverseDirectory(argv[1]); // Telusuri direktori setiap 15 detik
+}
+ ```
+
+### 1e
+Setiap kali program mengganti string dalam file, aktivitas tersebut dicatat dalam virus.log. Fungsi logActivity() digunakan untuk mencatat aktivitas ini dalam format waktu [dd-mm-YYYY][HH:MM:SS], diikuti dengan pesan bahwa string mencurigakan pada file tertentu telah berhasil diganti. Potongan kode fungsi logActivity():
+ ```sh
+void logActivity(const char *dirPath, const char *fileName) {
+    FILE *logFile = fopen("/home/dian/Documents/a/virus.log", "a");
+
+    // Dapatkan waktu saat ini
+    time_t currentTime;
+    struct tm *localTime;
+    time(&currentTime);
+    localTime = localtime(&currentTime);
+
+    // Format waktu
+    char timeString[100];
+    strftime(timeString, sizeof(timeString), "[%d-%m-%Y][%H:MM:SS]", localTime);
+
+    // Tulis catatan ke log
+    fprintf(logFile, "%s Suspicious string at %s/%s successfully replaced!\n", timeString, dirPath, fileName);
+    fclose(logFile);
+}
+ ```
+###  Screenshot Hasil Pengerjaan
+...
+### Kendala
+...
+### Hasil Akhir
+...
 
 ## Soal 2
 > Dikerjakan oleh: Amoes Noland (5027231028)
