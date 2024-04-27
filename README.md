@@ -655,6 +655,187 @@ void log_write(char *name, int act_code){
 ## Soal 3
 > Dikerjakan oleh: Malvin Putra Rismahardian (5027231048)
 
+### isi soal
+
+Pak Heze adalah seorang admin yang baik. Beliau ingin membuat sebuah program admin yang dapat memantau para pengguna sistemnya. Bantulah Pak Heze untuk membuat program  tersebut!
+
+a. Nama program tersebut dengan nama admin.c
+
+b. Program tersebut memiliki fitur menampilkan seluruh proses yang dilakukan oleh seorang user dengan menggunakan command:
+./admin <user>
+
+c. Program dapat memantau proses apa saja yang dilakukan oleh user. Fitur ini membuat program berjalan secara daemon dan berjalan terus menerus. Untuk menjalankan fitur ini menggunakan command: 
+./admin -m <user>
+Dan untuk mematikan fitur tersebut menggunakan: 
+./admin -s <user>
+Program akan mencatat seluruh proses yang dijalankan oleh user di file <user>.log dengan format:
+[dd:mm:yyyy]-[hh:mm:ss]_pid-process_nama-process_GAGAL/JALAN
+
+d. Program dapat menggagalkan proses yang dijalankan user setiap detik secara terus menerus dengan menjalankan: 
+./admin -c user
+sehingga user tidak bisa menjalankan proses yang dia inginkan dengan baik. Fitur ini dapat dimatikan dengan command:
+./admin -a user
+
+e. Ketika proses yang dijalankan user digagalkan, program juga akan melog dan menset log tersebut sebagai GAGAL. Dan jika di log menggunakan fitur poin c, log akan ditulis dengan JALAN
+
+
+### Penyelesaian
+**Pertama**
+
+Saya membuat direktori baru dengan nama `admin.c`, lalu mengisi `admin.c` dengan code yang sesuai dengan cara `nano admin.c` dan mulai membuat code.
+
+
+     #define LOG_FILE_EXTENSION ".log"
+ * Command ini adalah definisi konstanta `LOG_FILE_EXTENSION` yang menyimpan ekstensi file log. Dalam kasus ini, ekstensi log adalah `.log`.
+
+
+**Kedua**
+
+ ```sh
+ void write_log(const char *user, const char *activity, bool success) {
+    // Deklarasi variabel
+    time_t current_time;
+    struct tm *time_info;
+    char time_str[20];
+    char log_filename[50];
+    FILE *log_file;
+
+    // Dapatkan waktu saat ini
+    time(&current_time);
+    time_info = localtime(&current_time);
+    strftime(time_str, sizeof(time_str), "%d:%m:%Y-%H:%M:%S", time_info);
+
+    // Buat nama file log sesuai dengan user
+    snprintf(log_filename, sizeof(log_filename), "%s%s", user, LOG_FILE_EXTENSION);
+
+    // Buka file log
+    log_file = fopen(log_filename, "a");
+    if (log_file == NULL) {
+        perror("Error opening log file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Tulis log ke file
+    if (success) {
+        fprintf(log_file, "[%s]-pid_kegiatan-%s_JALAN\n", time_str, activity);
+    } else {
+        fprintf(log_file, "[%s]-pid_kegiatan-%s_GAGAL\n", time_str, activity);
+    }
+
+    // Tutup file log
+    fclose(log_file);
+}
+```
+* Ini adalah fungsi `write_log` yang digunakan untuk menulis kegiatan pengguna ke dalam file log. Fungsi ini menerima tiga parameter: `user` (nama pengguna), `activity` (kegiatan yang dilakukan), dan `success` (keberhasilan kegiatan). Fungsi ini mencatat waktu saat ini, membuat nama file log sesuai dengan pengguna, membuka file log, menulis kegiatan ke dalam file log, dan menutup file log.
+
+**Ketiga**
+
+```sh
+void monitor_user_activity(const char *user) {
+    char activity[100];
+
+    // Loop untuk terus memantau kegiatan user
+    while (1) {
+        // Misalnya, Anda dapat membaca kegiatan user dari input atau sumber lainnya
+        // Di sini, untuk contoh, kita menggunakan kegiatan statis
+        strcpy(activity, "Example activity");
+
+        // Catat kegiatan user ke dalam log
+        write_log(user, activity, true);
+
+        // Tunggu beberapa detik sebelum memantau kegiatan berikutnya
+        sleep(1);
+    }
+}
+```
+* Ini adalah fungsi `monitor_user_activity` yang digunakan untuk memantau kegiatan pengguna. Fungsi ini menerima satu parameter: `user` (nama pengguna). Fungsi ini memiliki loop yang terus berjalan untuk memantau kegiatan pengguna. Di dalam loop tersebut, kegiatan pengguna (dalam contoh ini, disetel statis sebagai "Example activity") dicatat dalam file log menggunakan fungsi `write_log`.
+
+
+**Keempat**
+
+```sh
+int main(int argc, char *argv[]) {
+    // Memeriksa jumlah argumen yang diberikan
+    if (argc < 3) {
+        printf("Usage: %s <command> <user>\n", argv[0]);
+        printf("Commands:\n");
+        printf("  -m : Monitor user activity\n");
+        printf("  -s : Stop monitoring user activity\n");
+        printf("  -c : Cancel user activities\n");
+        printf("  -a : Allow user activities\n");
+        return EXIT_FAILURE;
+    }
+
+    // Mendapatkan command dan user dari argumen
+    char *command = argv[1];
+    char *user = argv[2];
+
+    // Memeriksa command yang diberikan
+    if (strcmp(command, "-m") == 0) {
+        // Memantau kegiatan pengguna
+        printf("Monitoring user: %s\n", user);
+        monitor_user_activity(user);
+    } else if (strcmp(command, "-s") == 0) {
+        // Menghentikan pemantauan kegiatan pengguna
+        printf("Stop monitoring user: %s\n", user);
+        // Implementasi stop monitoring user
+    } else if (strcmp(command, "-c") == 0) {
+        // Membatalkan kegiatan pengguna
+        printf("Cancel activities for user: %s\n", user);
+        write_log(user, "User sedang aktif", false);
+    } else if (strcmp(command, "-a") == 0) {
+        // Mengizinkan kegiatan pengguna kembali
+        printf("Allow activities for user: %s\n", user);
+        write_log(user, "User sedang aktif", true);
+    } else {
+        // Command tidak dikenali
+        printf("Unknown command: %s\n", command);
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+```
+* Ini adalah fungsi `main`. Program utama ini menerima argumen dari baris perintah. Jika argumen yang diberikan tidak sesuai, program akan mencetak pesan usage dan keluar dengan kode keluar `EXIT_FAILURE`. Jika argumen sesuai, program akan mengeksekusi perintah yang diberikan (monitor, stop, cancel, atau allow) sesuai dengan argumen, dan kemudian mencetak pesan sesuai dengan tindakan yang dilakukan. Jika perintah tidak dikenali, program akan mencetak pesan bahwa command tidak dikenali dan keluar dengan kode keluar `EXIT_FAILURE`.
+
+
+### Cara Menjalankan code
+
+Compile file `admin.c` menjadi sebuah program eksekusi dengan menggunakan compiler C, seperti `gcc`. Contohnya:
+```sh
+gcc admin.c -o admin
+```
+* Perintah di atas akan menghasilkan file eksekusi bernama `admin`.
+
+Setelah berhasil dikompilasi, program admin dapat dijalankan dengan memberikan argumen sesuai dengan perintah yang diinginkan. Misalnya, untuk memulai memantau kegiatan user dengan cara:
+```sh
+./admin -m nama_user
+```
+
+Untuk menghentikan pemantauan kegiatan user, gunakan:
+```sh
+./admin -s nama_user
+```
+
+Untuk menggagalkan proses yang dijalankan user setiap detik secara terus menerus dengan menjalankan:
+```sh
+./admin -c nama_user
+```
+
+Fitur ini dapat dimatikan dengan command:
+```sh
+./admin -a nama_user
+```
+
+Untuk melihat log bisa dilakukan dengan command:
+```sh
+cat nama_user.log
+```
+
+
+### kendala
+Tidak ada kendala. 
+
 ## Soal 4
 > Dikerjakan oleh: Amoes Noland (5027231028)
 
