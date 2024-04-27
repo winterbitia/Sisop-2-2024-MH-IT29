@@ -833,6 +833,15 @@ cat nama_user.log
 ```
 
 
+### Screenshoot Hasil Pengerjaan
+
+Berikut ini adalah contoh menjalankan program dari `admin.c`
+
+![alt text](https://cdn.discordapp.com/attachments/1233746742990868520/1233747016333660240/Screenshot_2024-04-27_184826.png?ex=662e37f2&is=662ce672&hm=f2e7cbc64bd7114061c2648c4a16f8d1bb0dd2bbfb99c798d37458a5ac29f9b8&)
+
+Berikut ini adalah isi didalam `Namauser.log`
+![alt text](https://cdn.discordapp.com/attachments/1233746742990868520/1233747015796654090/Screenshot_2024-04-27_184231.png?ex=662e37f2&is=662ce672&hm=2613f98b9a90e9a4ae533fe12d8673b7bd8c2af2556cc675590cb2a1c1683671&)
+
 ### kendala
 Tidak ada kendala. 
 
