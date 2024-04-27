@@ -170,11 +170,11 @@ void logActivity(const char *dirPath, const char *fileName) {
 }
  ```
 ###  Screenshot Hasil Pengerjaan
-...
-### Kendala
-...
-### Hasil Akhir
-...
+Sebelum:
+![alt text](https://cdn.discordapp.com/attachments/1223171682500350062/1233749012952121478/Screenshot_1647.png?ex=662e39ce&is=662ce84e&hm=5a817082fe27e7a24abef9ae2659c57e8e9b44cee4aa82afec6c7a1083b96303&)
+Sesudah:
+![alt text](https://cdn.discordapp.com/attachments/1223171682500350062/1233749079507468379/Screenshot_1646.png?ex=662e39de&is=662ce85e&hm=103b15e99b702e967e24fd9c60564abd7f25df404b974c55dc5a4b050b80918c&)
+![alt text](https://cdn.discordapp.com/attachments/1223171682500350062/1233749119932170240/Screenshot_1645.png?ex=662e39e8&is=662ce868&hm=84bfc63793abdb033d81a56fa9b9c08d4ff27d2528b298aa7d058f743a0367e5&)
 
 ## Soal 2
 > Dikerjakan oleh: Amoes Noland (5027231028)
